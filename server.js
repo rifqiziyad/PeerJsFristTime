@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
+
 const { ExpressPeerServer } = require("peer");
+
 const http = require("http");
 
 const server = http.createServer(app);
@@ -27,7 +29,7 @@ app.get("/", (req, res) => {
 
 app.get("/room/:roomid", (req, res) => {
   if (room[req.params.roomid]?.length >= 2) {
-    res.send("<h1>Maaf room sudah penuh<h1/>");
+    res.send("<h1>Maaf Room Sudah Penuh</h1>");
   } else {
     res.sendFile(path.resolve("./views/index.html"));
   }
@@ -45,4 +47,4 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => console.log("Server is running..."));
+server.listen(PORT, () => console.log("Server is Running..."));

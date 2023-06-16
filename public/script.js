@@ -9,11 +9,10 @@ let peerMediaConnection;
 const socket = io();
 const peer = new Peer(undefined, {
   host: location.hostname,
-  port: location.port,
   secure: false,
+  port: location.port,
   path: "peerjs",
 });
-
 peer.on("open", (peerId) => {
   socket.emit("new-user", { roomId, peerId });
 });
@@ -28,13 +27,13 @@ socket.on("another-user", async (remotePeerId) => {
     localStream.addTrack(audioTrack);
     showStream("local");
   } catch (error) {
-    alert("gagal menampilkan user media \n \n" + error);
+    alert("Gagal menampilkan user media \n\n" + error);
   }
   const call = peer.call(remotePeerId, localStream);
   peerMediaConnection = call.peerConnection;
   call.on("stream", (stream) => {
     remoteStream.addTrack(stream.getVideoTracks()[0]);
-    remoteStream.addTrack(stream.getVideoTracks()[0]);
+    remoteStream.addTrack(stream.getAudioTracks()[0]);
     showStream("remote");
   });
 });
@@ -49,13 +48,13 @@ peer.on("call", async (call) => {
     localStream.addTrack(audioTrack);
     showStream("local");
   } catch (error) {
-    alert("gagal menampilkan user media \n \n" + error);
+    alert("Gagal menampilkan user media \n\n" + error);
   }
   call.answer(localStream);
   peerMediaConnection = call.peerConnection;
   call.on("stream", (stream) => {
     remoteStream.addTrack(stream.getVideoTracks()[0]);
-    remoteStream.addTrack(stream.getVideoTracks()[0]);
+    remoteStream.addTrack(stream.getAudioTracks()[0]);
     showStream("remote");
   });
 });
@@ -66,13 +65,10 @@ function getLocalTracks(constraint) {
       .getUserMedia(constraint)
       .then((stream) => {
         if (constraint.video && constraint.audio) {
-          resolve([stream.getAudioTracks()[0], stream.getVideoTracks()[0]]);
-        }
-        if (constraint.video) {
+          resolve([stream.getVideoTracks()[0], stream.getAudioTracks()[0]]);
+        } else if (constraint.video) {
           resolve([stream.getVideoTracks()[0]]);
-        }
-
-        if (constraint.audio) {
+        } else if (constraint.audio) {
           resolve([stream.getAudioTracks()[0]]);
         }
       })
@@ -92,13 +88,12 @@ function showStream(type) {
 }
 
 function stopTrack({ stream, kind = "both" }) {
-  console.log(kind);
   const tracks =
     kind === "both"
       ? stream.getTracks()
       : stream.getTracks().filter((track) => track.kind === kind);
   tracks.forEach((track) => {
-    track.enable = false;
+    track.enabled = false;
     setTimeout(() => {
       track.stop();
       stream.removeTrack(track);
@@ -108,13 +103,13 @@ function stopTrack({ stream, kind = "both" }) {
 
 function replaceTrackBeingSended({ track, kind }) {
   if (!peerMediaConnection) return;
-  const rtpSenders = peerMediaConnection.getSender();
+  const rtpSenders = peerMediaConnection.getSenders();
   const filteredRtpSenders = rtpSenders.filter(
     (rtpSender) => rtpSender.track.kind === kind
   );
   if (filteredRtpSenders.length === 0) return;
   const rtpSender = filteredRtpSenders[0];
-  rtpSender.replaceTraclk(track);
+  rtpSender.replaceTrack(track);
 }
 
 async function buttonHandler(e) {
@@ -127,8 +122,9 @@ async function buttonHandler(e) {
     try {
       const [track] = await getLocalTracks({ [kind]: true });
       localStream.addTrack(track);
+      replaceTrackBeingSended({ track, kind });
     } catch (error) {
-      alert(`gagal menampilkan user ${kind} \n \n ${error}`);
+      alert(`Gagal menampilkan user ${kind} \n\n ${error}`);
     } finally {
       element.dataset.state = "active";
     }
